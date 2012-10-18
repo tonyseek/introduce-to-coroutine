@@ -5,6 +5,8 @@ WITH_ENV = source $(VENV_USE);
 DOCS_DIR = docs
 WITH_DOC = cd $(DOCS_DIR);
 
+BUILD = $(WITH_ENV) $(WITH_DOC) $(MAKE) $(MFLAGS)
+
 all: build
 venv: $(VENV_USE)
 
@@ -18,5 +20,5 @@ $(VENV_USE):
 
 build: $(VENV_USE) $(docs)
 	@echo "=> Building HTML format..."
-	$(WITH_ENV) $(WITH_DOC) $(MAKE) $(MFLAGS) html
+	$(BUILD) slides
 	@echo "=> Done"
