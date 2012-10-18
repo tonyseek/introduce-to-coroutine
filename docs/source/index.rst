@@ -217,17 +217,115 @@ next() 唤醒挂起的协程继续执行到下一个挂起点
     match("de", patt) -- output: true
     match("abcde", patt) -- output: false
 
+遍历子树
+~~~~~~~~
+
+.. code-block:: guess
+
+    #!/usr/bin/env python3.3
+
+    class TreeNode(object):
+        """A tree struct."""
+
+        def __init__(self, name, parents=[]):
+            self.name = name
+            self.parents = frozenset(parents)
+
+        def __repr__(self):
+            return "<Node %s>" % self.name
+
+        def get_all_parents(self):
+            for parent in self.parents:
+                yield parent
+                yield from parent.get_all_parents()
+
 异步编程
 --------
+
+回调导致支离破碎的控制流
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: javascript
+
+    var check_conflict = function(callback) {
+        var url = "/j/chk-conflict?start=" + start + "&end=" + end;
+        $.get(url, function(response) {
+            if (response.number_of_items > 0) {
+                if (!confirm(response.prompt_text)) {
+                    return;
+                }
+            }
+            if (typeof callback !== "undefined") {
+                callback();
+            }
+        });
+    };
+
+    var confirm_days = function(callback) {
+        // ...
+        $.get(url, function(response) {
+            // ...
+            callback();
+        })
+    };
+
+
+回调导致支离破碎的控制流
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: javascript
+
+    check_conflict(function() {
+        confirm_days(function() {
+            $("#my-form").submit();
+        });
+    });
+
+如果这个过程在非异步模式下，只需要：
+
+.. code-block:: javascript
+
+    if (check_conflict() && confirm_days()) {
+        $("#my-form").submit();
+    }
 
 老赵的 Wind.js
 ~~~~~~~~~~~~~~
 
+.. code-block:: javascript
+
+    var submit = eval(Wind.compile("async", function () {
+        if ($await(check_conflict()) && $await(confirm_days())) {
+            $("#my-form").submit();
+        }
+    }));
+
 Greenlet/Gevent
 ~~~~~~~~~~~~~~~
 
-面向关注面编程
---------------
+Greenlet 提供协程支持
 
-引用资料
---------
+结合 libevent/libev 获取事件
+
+当 TCP 连接等待时，不阻塞线程，而是挂起当前协程
+
+连接就绪事件触发时，唤醒对应的协程继续执行
+
+基于协程的好处
+~~~~~~~~~~~~~~
+
+不需要内核来调度, 完全基于事件
+
+高并发下无压力，因为和回调的执行方式等价
+
+无抢占，协程永远“安全”
+
+* N 个 CPU 开启 N 个进程
+* M 个连接开启 M 个协程
+* M 平均地分布到 N 中
+
+适合 IO 密集型应用
+
+
+QA
+==
